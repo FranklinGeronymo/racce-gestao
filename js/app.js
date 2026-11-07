@@ -33,10 +33,9 @@ function parseBrl(s) {
 }
 function parsePct(s) { s = String(s || '').replace('%', '').replace(',', '.').trim(); if (s === '') return 0; var n = Number(s); return isFinite(n) ? n : NaN; }
 function pctTxt(n) { return String(Math.round(n * 100) / 100).replace('.', ','); }
-function pct(a, b) { return b ? Math.round(a / b * 100) + '%' : '—'; }
+function pct(a, b) { if (!b) return '—'; var n = Math.round(a / b * 100); return (n < 0 ? '−' + Math.abs(n) : n) + '%'; }
 function norm(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 function plural(n, um, varios) { return milhar(n) + ' ' + (n === 1 ? um : varios); }
-function uid() { return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }
 function hoje() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 function somarDias(iso, n) { var p = iso.split('-'), t = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + n)); return t.toISOString().slice(0, 10); }
 function difDias(a, b) { return Math.round((Date.parse(a + 'T00:00:00Z') - Date.parse(b + 'T00:00:00Z')) / 864e5); }
@@ -199,8 +198,6 @@ function listaUsuarios() {
   var us = D().usuarios || {};
   return Object.keys(us).map(function (id) { return Object.assign({ id: id }, us[id]); }).sort(function (a, b) { return norm(a.nome) < norm(b.nome) ? -1 : 1; });
 }
-function nomeUsuario(id) { var u = id && (D().usuarios || {})[id]; return u ? u.nome : ''; }
-function usuarioAtual() { return S.modo === 'real' && S.perfil ? S.perfil : null; }
 function permissoes() { return S.perfil && S.perfil.permissoes ? S.perfil.permissoes : []; }
 /**
  * Decide só o que APARECE na tela. Quem autoriza de verdade é o servidor: mesmo que
@@ -508,7 +505,7 @@ function renderQuem() {
 }
 
 // ---------- entrada no sistema, troca de senha e sessão
-var MARCA_ENTRAR = '<section class="entrar-marca"><div><svg viewBox="0 0 434.9 45.1" role="img" aria-label="Racce"><use href="#rc-nome"/></svg><h2>Gestão da loja</h2><p>Vendas, estoque, despesas e resultado num só lugar, com acesso por função para cada pessoa da equipe.</p></div><small>Acesso protegido por usuário e senha. Os dados ficam no servidor da loja.</small></section>';
+var MARCA_ENTRAR = '<section class="entrar-marca"><div><svg viewBox="0 0 434.9 45.1" role="img" aria-label="Racce"><use href="#rc-nome"/></svg><h2>Gestão da loja</h2><p>Vendas, estoque, despesas e resultado num só lugar, com acesso por função para cada pessoa da equipe.</p></div><small>Acesso protegido por e-mail e senha. Os dados ficam no servidor da loja.</small></section>';
 function telaEntrar(corpo) {
   $('#telaEntrar').innerHTML = '<div class="entrar">' + MARCA_ENTRAR + '<section class="entrar-form"><div class="entrar-caixa">' + corpo + '</div></section></div>';
 }
@@ -1659,6 +1656,7 @@ PAG.usuarios = function (c) {
 function mesmaLista(a, b) { a = a || []; b = b || []; return a.length === b.length && a.every(function (x) { return b.indexOf(x) >= 0; }); }
 /** Mostra a senha temporária uma única vez, para o administrador entregar à pessoa. */
 function mostrarSenhaTemporaria(nome, email, senha) {
+  guardarFoco();
   $('#camadaConf').innerHTML = '<div class="veu" style="z-index:70"><div class="caixa" role="alertdialog" aria-modal="true" aria-labelledby="stTit"><h2 id="stTit" style="font-size:22px">Senha temporária de ' + esc(nome) + '</h2>' +
     '<p>Entregue pessoalmente a <b>' + esc(email) + '</b>. No primeiro acesso, o sistema pede para criar uma senha nova. Esta senha temporária não será mostrada de novo.</p>' +
     '<div class="senha-temp"><code id="stSenha">' + esc(senha) + '</code><button class="btn" data-a="copiarSenha">Copiar</button></div>' +
@@ -1742,17 +1740,22 @@ function renderDetalhe(c) {
   }
   if (!h) { ui.det = null; cx.innerHTML = ''; return; }
   var rol = $('#camadaDet .veu'), topo = rol ? rol.scrollTop : 0;
-  cx.innerHTML = '<div class="veu lado" data-a="fundoDet"><div class="caixa" role="dialog" aria-modal="true">' + h + '</div></div>';
+  cx.innerHTML = '<div class="veu lado" data-a="fundoDet"><div class="caixa" role="dialog" aria-modal="true" aria-label="' + (d.t === 'venda' ? 'Detalhes da venda' : 'Detalhes do produto') + '">' + h + '</div></div>';
   $('#camadaDet .veu').scrollTop = topo;
   aplicarPermissoes($('#camadaDet'));
   if (d.t === 'produto' || d.t === 'cat') carregarFotoGrande(d.id);
 }
-function abrirDet(t, id) { ui.det = { t: t, id: id }; renderDetalhe(); }
+function abrirDet(t, id) {
+  var novo = !ui.det; if (novo) guardarFoco();
+  ui.det = { t: t, id: id }; renderDetalhe();
+  if (novo) { var f = $('#camadaDet .fechar'); if (f) f.focus(); }
+}
 
 // =============================================================================
 // Formulários
 // =============================================================================
 function abrirModal(o) {
+  if (!ui.modal) guardarFoco();
   ui.modal = o;
   $('#camadaForm').innerHTML = '<div class="veu"><div class="caixa' + (o.largo ? ' larga' : '') + '" role="dialog" aria-modal="true" aria-labelledby="mTit"><header><div>' + (o.olho ? '<span class="olho">' + esc(o.olho) + '</span>' : '') + '<h2 id="mTit" style="margin-top:' + (o.olho ? '8px' : '0') + '">' + esc(o.titulo) + '</h2></div><button type="button" class="fechar" data-a="fecharModal" aria-label="Fechar">' + ic('x') + '</button></header>' +
     (o.intro ? '<div>' + o.intro + '</div>' : '') + '<form id="mForm" novalidate><div class="campos">' + o.html() + '</div><div class="erro-form" id="mErro" hidden style="margin-top:14px"></div>' +
@@ -1760,7 +1763,22 @@ function abrirModal(o) {
   var prim = $('#mForm input:not([type=checkbox]):not([disabled]), #mForm select, #mForm textarea'); if (prim) prim.focus();
   if (o.aoAbrir) o.aoAbrir();
 }
-function fecharModal() { ui.modal = null; $('#camadaForm').innerHTML = ''; }
+function fecharModal() { ui.modal = null; $('#camadaForm').innerHTML = ''; devolverFoco(); }
+// ---------- acessibilidade dos diálogos: o Tab fica dentro do diálogo aberto e o foco volta ao fechar
+var focoAntes = [];
+function guardarFoco() { var a = document.activeElement; if (a && a !== document.body) focoAntes.push(a); }
+function devolverFoco() { setTimeout(function () { while (focoAntes.length) { var el = focoAntes.pop(); if (el && document.contains(el) && el.offsetParent !== null) { el.focus(); return; } } }, 0); }
+function dialogoAberto() { var l = ['#camadaConf .caixa', '#camadaForm .caixa', '#camadaDet .caixa']; for (var i = 0; i < l.length; i++) { var d = $(l[i]); if (d) return d; } return null; }
+document.addEventListener('keydown', function (ev) {
+  if (ev.key !== 'Tab') return;
+  var d = dialogoAberto(); if (!d) return;
+  var f = Array.prototype.filter.call(d.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'), function (x) { return x.offsetParent !== null; });
+  if (!f.length) return;
+  var prim = f[0], ult = f[f.length - 1];
+  if (!d.contains(document.activeElement)) { ev.preventDefault(); prim.focus(); }
+  else if (ev.shiftKey && document.activeElement === prim) { ev.preventDefault(); ult.focus(); }
+  else if (!ev.shiftKey && document.activeElement === ult) { ev.preventDefault(); prim.focus(); }
+});
 function enviarModal() {
   var o = ui.modal; if (!o) return;
   var cx = $('#mErro'), bt = $('#mForm button[type=submit]');
@@ -1783,6 +1801,7 @@ function dinheiro(id, rotulo, obrig) {
 var resolverConf = null;
 function confirmar(msg, botao, perigo) {
   return new Promise(function (ok) {
+    guardarFoco();
     resolverConf = ok;
     $('#camadaConf').innerHTML = '<div class="veu" style="z-index:70"><div class="caixa" role="alertdialog" aria-modal="true" aria-labelledby="cTit"><h2 id="cTit" style="font-size:22px">Confirme</h2><p>' + esc(msg) + '</p><div class="rodape"><button class="btn" data-a="conf" data-v="0">Voltar</button><button class="btn ' + (perigo ? 'per cheio' : 'pri') + '" data-a="conf" data-v="1">' + esc(botao || 'Confirmar') + '</button></div></div></div>';
     $('#camadaConf button[data-v="0"]').focus();
@@ -2255,8 +2274,8 @@ var ACOES = {
     var ok = function () { toast('Texto copiado.'); }, falha = function () { ta.focus(); ta.select(); toast('Selecione e copie com Ctrl+C.'); };
     try { navigator.clipboard.writeText(ta.value).then(ok, falha); } catch (e) { falha(); }
   },
-  fecharConf: function () { $('#camadaConf').innerHTML = ''; },
-  conf: function (d) { $('#camadaConf').innerHTML = ''; var r = resolverConf; resolverConf = null; if (r) r(d.v === '1'); },
+  fecharConf: function () { $('#camadaConf').innerHTML = ''; devolverFoco(); },
+  conf: function (d) { $('#camadaConf').innerHTML = ''; devolverFoco(); var r = resolverConf; resolverConf = null; if (r) r(d.v === '1'); },
   verExemplo: verExemplo, sairExemplo: sairExemplo, baixarBackup: baixarBackup,
   inicio: function (d, el, ev) { if (ev) ev.preventDefault(); irPara(primeiraPagina()); },
   sair: function () {
@@ -2282,8 +2301,8 @@ var ACOES = {
   editarUsuario: function (d) { var u = listaUsuarios().filter(function (x) { return x.id === d.id; })[0]; if (u) formUsuario(u); },
   verHoje: function () { ui.f.vp = 'hoje'; irPara('vendas'); },
   verBaixos: function () { ui.f.est = 'baixo'; irPara('estoque'); },
-  fecharDet: function () { ui.det = null; renderDetalhe(); },
-  fundoDet: function (d, el, ev) { if (ev.target === el) { ui.det = null; renderDetalhe(); } },
+  fecharDet: function () { ui.det = null; renderDetalhe(); devolverFoco(); },
+  fundoDet: function (d, el, ev) { if (ev.target === el) { ui.det = null; renderDetalhe(); devolverFoco(); } },
   verVenda: function (d) { abrirDet('venda', d.id); },
   verProduto: function (d) { abrirDet('produto', d.id); },
   fecharModal: fecharModal,
