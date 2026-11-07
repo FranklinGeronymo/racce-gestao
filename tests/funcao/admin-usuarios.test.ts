@@ -2,7 +2,7 @@
 // Pré-requisitos: tests/servidor-falso/preparar.sh e o servidor rodando (PORTA=8787).
 // Uso: bun test tests/funcao
 import { describe, expect, test } from 'bun:test';
-import { problemaSenha, senhaTemporaria } from '../../supabase/functions/admin-usuarios/index.ts';
+import { cabecalhosChave, lerChave, problemaSenha, senhaTemporaria } from '../../supabase/functions/admin-usuarios/index.ts';
 
 const BASE = process.env.BASE ?? 'http://localhost:8787';
 const ANON = 'chave-publica-de-teste';
@@ -41,6 +41,18 @@ describe('regras de senha', () => {
     expect(problemaSenha('1234567890', 'a@b.com')).toContain('letras e números');
     expect(problemaSenha('maria.souza2026', 'maria.souza@b.com')).toContain('e-mail');
     expect(problemaSenha('Treino forte 2026', 'ana@b.com')).toBeNull();
+  });
+});
+
+describe('chaves do Supabase (novas e antigas)', () => {
+  test('chave nova vai só no apikey; a antiga (JWT) também no Authorization', () => {
+    expect(cabecalhosChave('sb_secret_abc')).toEqual({ apikey: 'sb_secret_abc' });
+    expect(cabecalhosChave('eyJhbGciOi.x.y')).toEqual({ apikey: 'eyJhbGciOi.x.y', Authorization: 'Bearer eyJhbGciOi.x.y' });
+  });
+  test('lê a chave "default" do formato novo e, sem ele, usa a antiga', () => {
+    expect(lerChave('{"default":"sb_secret_novo"}', 'eyJ-antiga')).toBe('sb_secret_novo');
+    expect(lerChave(undefined, 'eyJ-antiga')).toBe('eyJ-antiga');
+    expect(lerChave('não é json', 'eyJ-antiga')).toBe('eyJ-antiga');
   });
 });
 

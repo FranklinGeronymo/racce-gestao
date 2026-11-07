@@ -15,10 +15,25 @@
 
 export type Ambiente = {
   SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_ANON_KEY: string;          // chave pública (publishable "sb_publishable_..." ou a antiga "anon")
+  SUPABASE_SERVICE_ROLE_KEY: string;  // chave secreta (secret "sb_secret_..." ou a antiga "service_role")
   ALLOWED_ORIGINS: string; // origens do aplicativo, separadas por vírgula
 };
+
+/**
+ * Cabeçalhos para uma chave do projeto. As chaves novas (sb_publishable_/sb_secret_) não são JWT e
+ * vão SÓ no cabeçalho apikey (no Authorization o Supabase as recusa com "Invalid JWT").
+ * As chaves antigas (JWT, começam com "eyJ") também vão no Authorization, como sempre foi.
+ */
+export function cabecalhosChave(chave: string): Record<string, string> {
+  return chave.startsWith('eyJ') ? { apikey: chave, Authorization: `Bearer ${chave}` } : { apikey: chave };
+}
+
+/** Lê a chave nova (JSON por nome, "default") e, se não houver, a antiga. */
+export function lerChave(novas: string | undefined, antiga: string | undefined): string {
+  if (novas) { try { const o = JSON.parse(novas); if (o && typeof o.default === 'string' && o.default) return o.default; } catch { /* segue para a antiga */ } }
+  return antiga ?? '';
+}
 
 type Perfil = { id: string; email: string; nome: string; papel: string; paginas: string[]; extras: string[]; ativo: boolean; trocar_senha: boolean };
 
@@ -86,7 +101,7 @@ export function senhaTemporaria(): string {
 
 // ---------- clientes das APIs do Supabase ----------
 function apis(env: Ambiente, f: typeof fetch) {
-  const servico = { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}` };
+  const servico = cabecalhosChave(env.SUPABASE_SERVICE_ROLE_KEY);
 
   async function chamar(url: string, init: RequestInit): Promise<{ status: number; corpo: any }> {
     const r = await f(url, init);
@@ -281,12 +296,14 @@ export async function handler(req: Request, env: Ambiente, f: typeof fetch = fet
 }
 
 // No Supabase (Deno), publica a função. Nos testes locais, só o handler é importado.
+// A verificação automática de JWT da plataforma fica desligada (verify_jwt = false), como o Supabase
+// recomenda com as chaves novas: a sessão é conferida aqui, no Auth, a cada chamada (usuarioDoToken).
 declare const Deno: any;
 if (typeof Deno !== 'undefined' && Deno?.serve) {
   const env: Ambiente = {
     SUPABASE_URL: Deno.env.get('SUPABASE_URL') ?? '',
-    SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    SUPABASE_SERVICE_ROLE_KEY: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    SUPABASE_ANON_KEY: lerChave(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS'), Deno.env.get('SUPABASE_ANON_KEY')),
+    SUPABASE_SERVICE_ROLE_KEY: lerChave(Deno.env.get('SUPABASE_SECRET_KEYS'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')),
     ALLOWED_ORIGINS: Deno.env.get('ALLOWED_ORIGINS') ?? '',
   };
   Deno.serve((req: Request) => handler(req, env));

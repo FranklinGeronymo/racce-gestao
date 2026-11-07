@@ -2,5 +2,5 @@
 project_id = "racce-gestao"
 
 [functions.admin-usuarios]
-# Exige um token de sessão válido antes de a função rodar. A função ainda confere o usuário e o perfil.
-verify_jwt = true
+# Desligado como o Supabase recomenda para as chaves novas: a própria função confere a sessão no Auth a cada chamada.
+verify_jwt = false

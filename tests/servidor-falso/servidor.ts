@@ -88,7 +88,7 @@ function resp(corpo: unknown, status = 200, extra: Record<string, string> = {}) 
   return new Response(corpo === null ? null : JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json', ...extra } });
 }
 function chaveValida(req: Request) { const k = req.headers.get('apikey'); return k === CHAVE_ANON || k === CHAVE_SERVICO; }
-function eServico(req: Request) { return (req.headers.get('Authorization') ?? '') === `Bearer ${CHAVE_SERVICO}`; }
+function eServico(req: Request) { return (req.headers.get('Authorization') ?? '') === `Bearer ${CHAVE_SERVICO}` || (req.headers.get('apikey') === CHAVE_SERVICO && !req.headers.get('Authorization')); }
 
 // ---------- /auth/v1 ----------
 async function auth(req: Request, url: URL): Promise<Response> {
@@ -150,7 +150,8 @@ async function auth(req: Request, url: URL): Promise<Response> {
 function papelDe(req: Request): { papel: 'anon' | 'authenticated' | 'service_role'; claims: Record<string, unknown> | null } {
   if (!chaveValida(req)) throw new ErroApi(401, 'PGRST301', 'No API key found in request');
   const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
-  if (token === CHAVE_SERVICO) return { papel: 'service_role', claims: { role: 'service_role' } };
+  // chave secreta nova: só no apikey; antiga: também no Authorization
+  if (token === CHAVE_SERVICO || (!token && req.headers.get('apikey') === CHAVE_SERVICO)) return { papel: 'service_role', claims: { role: 'service_role' } };
   if (!token || token === CHAVE_ANON) return { papel: 'anon', claims: { role: 'anon' } };
   const c = verificar(token);
   if (!c) throw new ErroApi(401, 'PGRST301', 'JWT expired');

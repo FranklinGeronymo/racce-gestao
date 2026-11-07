@@ -52,7 +52,7 @@ Em **Authentication** (os nomes podem variar um pouco conforme a versão do pain
 
 ## 5. Publicar a função de usuários
 
-**Pelo painel:** **Edge Functions > Deploy a new function > Via Editor**, nome `admin-usuarios`, cole o conteúdo de `supabase/functions/admin-usuarios/index.ts` e publique. Mantenha **Verify JWT** ligado.
+**Pelo painel:** **Edge Functions > Deploy a new function > Via Editor**. O **nome da função precisa ser exatamente `admin-usuarios`** (o painel sugere um nome aleatório, como `smart-api`; troque). Cole o conteúdo de `supabase/functions/admin-usuarios/index.ts` e publique com **Verify JWT desligado**: o Supabase recomenda isso com as chaves novas, e a própria função confere a sessão no Auth a cada chamada.
 
 **Pela linha de comando** (alternativa):
 
@@ -68,7 +68,7 @@ Depois, em **Edge Functions > Secrets** (ou `supabase secrets set`), crie:
 |---|---|
 | `ALLOWED_ORIGINS` | O endereço do aplicativo, sem barra no fim. Ex.: `https://franklingeronymo.github.io`. Se houver domínio próprio, inclua os dois separados por vírgula. |
 
-`SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` já existem automaticamente nas funções. **A chave secreta nunca vai para o aplicativo nem para o GitHub.**
+As chaves do projeto já existem automaticamente nas funções. A função lê as chaves novas (`SUPABASE_PUBLISHABLE_KEYS` e `SUPABASE_SECRET_KEYS`) e, se não houver, as antigas (`SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY`), que o Supabase desativa no fim de 2026. **A chave secreta nunca vai para o aplicativo nem para o GitHub.**
 
 ## 6. Ligar o aplicativo ao Supabase
 
