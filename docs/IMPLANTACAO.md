@@ -22,8 +22,10 @@ Quem executa precisa de acesso de administrador ao GitHub do repositório e a um
 ## 2. Criar o banco
 
 1. Abra **SQL Editor > New query**.
-2. Cole todo o conteúdo de `supabase/migrations/20261107000000_racce_gestao.sql` e clique em **Run**.
+2. Rode, **um de cada vez e nesta ordem**, os arquivos de `supabase/migrations/`: primeiro `20261107000000_racce_gestao.sql`, depois `20261107000100_rls_desempenho.sql`. Para cada um: cole todo o conteúdo e clique em **Run**.
 3. Deve aparecer "Success. No rows returned". Se aparecer erro, não rode de novo por cima: copie a mensagem e corrija antes.
+
+> **Projeto em uso:** `racce-gestao` (ref. `rdhbwarjzdphjfdbpruw`, região São Paulo). As duas migrações e a função `admin-usuarios` já foram aplicadas nele; `js/config.js` já aponta para ele.
 
 ## 3. Configurar a autenticação
 

@@ -9,6 +9,6 @@
  * NUNCA coloque aqui a chave secreta ("secret" ou "service_role").
  */
 window.RACCE_CONFIG = {
-  supabaseUrl: 'https://fyuqnbgszwqgrgmbjyig.supabase.co',
-  supabaseChavePublica: 'sb_publishable_7EOUUQ3tYDGem6N0mKc_1Q_fN6xZL8O'
+  supabaseUrl: 'https://rdhbwarjzdphjfdbpruw.supabase.co',
+  supabaseChavePublica: 'sb_publishable_ov2S_I2GHDmxmt9uWhIA5Q_ps2gIY5o'
 };
