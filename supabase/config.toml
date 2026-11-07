@@ -1,0 +1,6 @@
+# Configuração usada pela linha de comando do Supabase (supabase functions deploy).
+project_id = "racce-gestao"
+
+[functions.admin-usuarios]
+# Exige um token de sessão válido antes de a função rodar. A função ainda confere o usuário e o perfil.
+verify_jwt = true
