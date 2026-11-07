@@ -487,7 +487,7 @@ function renderAbas(c) {
     var pre = '';
     if ((p[0] === 'usuarios' || p[0] === 'ajustes') && !sep) { sep = true; pre = '<span class="menu-sep" aria-hidden="true"></span>'; }
     return pre + '<button data-a="ir" data-p="' + p[0] + '"' + (ui.pagina === p[0] || (p[0] === 'vendas' && ui.pagina === 'historico') ? ' aria-current="page"' : '') + '>' + ic(p[0]) + '<span class="rot' + (p[2] ? ' longo' : '') + '">' + p[1] + '</span>' + (p[2] ? '<span class="rot-curto">' + p[2] + '</span>' : '') +
-      (conta[p[0]] ? '<span class="conta" aria-label="' + conta[p[0]] + ' alertas">' + conta[p[0]] + '</span>' : '') + '</button>';
+      (conta[p[0]] ? '<span class="conta" aria-label="' + plural(conta[p[0]], 'alerta', 'alertas') + '">' + conta[p[0]] + '</span>' : '') + '</button>';
   }).join('');
   renderQuem();
   document.querySelectorAll('.btn-venda').forEach(function (b) { b.classList.toggle('ativo', ui.pagina === 'venda'); });
@@ -1453,7 +1453,7 @@ PAG.estoque = function (c) {
   return cabecalho('Mercadoria', 'Estoque', 'O estoque é calculado a partir das entradas, dos ajustes e das vendas. Para corrigir uma quantidade, use "Ajustar estoque" com a contagem real.',
     '<button class="btn pri" data-a="novaEntrada" data-w>' + ic('mais') + 'Entrada de mercadoria</button><button class="btn" data-a="novoAjuste" data-w>Ajustar estoque</button><button class="btn" data-a="novoProduto" data-w>Cadastrar produto</button>' + botaoCsv('estoque')) +
     '<div class="tiles">' + tile('Peças em estoque', milhar(ev.pecas), plural(c.produtos.filter(function (p) { return p.ativo; }).length, 'produto ativo', 'produtos ativos')) + tile('Valor de custo', brl(ev.custo), 'o que foi pago pelas peças') +
-    tile('Valor de venda', brl(ev.venda), 'se tudo for vendido pelo preço cheio') + tile('Tamanhos para repor', String(al.length), al.filter(function (a) { return a.q <= 0; }).length + ' zerados · mínimo padrão de ' + c.cfg.estoqueMinimo, al.length ? '' : '') + '</div>' +
+    tile('Valor de venda', brl(ev.venda), 'se tudo for vendido pelo preço cheio') + tile('Tamanhos para repor', String(al.length), plural(al.filter(function (a) { return a.q <= 0; }).length, 'zerado', 'zerados') + ' · mínimo padrão de ' + c.cfg.estoqueMinimo) + '</div>' +
     '<div class="filtros">' + filtroTexto('eq', 'Buscar', 'Nome, cor ou código') + filtroSel('ecat', 'Categoria', [['', 'Todas']].concat(c.cfg.categoriasProduto)) + filtroSel('epub', 'Público', [['', 'Todos']].concat(PUBLICOS)) + '</div>' +
     chipsFiltro('est', [['', 'Ativos'], ['baixo', 'Para repor', n.baixo], ['zerado', 'Com tamanho zerado', n.zerado], ['semfoto', 'Sem foto', n.semfoto], ['inativos', 'Inativos', n.inativo]]) +
     tabela(cols, lista, { acao: 'verProduto', vazio: c.produtos.length ? 'Nenhum produto com este filtro.' : 'Nenhum produto cadastrado. <button class="btn link" data-a="novoProduto" data-w>Cadastrar o primeiro</button>' }) +
@@ -1621,7 +1621,7 @@ PAG.ajustes = function (c) {
     '<div class="grade2">' + bloco('Taxas da maquininha', 'Percentual cobrado em cada forma de pagamento. Entra no cálculo do lucro das vendas registradas daqui em diante.', taxas) + bloco('Estoque mínimo', 'Quando um tamanho chega a este número, ele aparece em "Repor estoque".', loja) + '</div>' + blocoMetas + blocoRecibo +
     bloco('Listas', '', listas) +
     '<div class="grade2">' + bloco('Exportar dados', 'Arquivos CSV para abrir no Excel ou no Planilhas Google.', '<div class="acoes">' + botaoCsv('todasVendas', 'Vendas') + botaoCsv('itens', 'Itens vendidos') + botaoCsv('estoqueAj', 'Estoque') + botaoCsv('todasDespesas', 'Despesas') + '</div>') +
-    bloco('Onde os dados ficam', '', '<p>' + esc(acesso) + '</p><p class="fraco" style="font-size:13px">' + milhar(total) + ' registros' + (S.atualizadoEm ? ' · atualizado às ' + horaDe(new Date(S.atualizadoEm).toISOString()) : '') + '.</p>' +
+    bloco('Onde os dados ficam', '', '<p>' + esc(acesso) + '</p><p class="fraco" style="font-size:13px">' + plural(total, 'registro', 'registros') + (S.atualizadoEm ? ' · atualizado às ' + horaDe(new Date(S.atualizadoEm).toISOString()) : '') + '.</p>' +
       (S.modo !== 'exemplo' ? '<div class="acoes"><button class="btn" data-a="atualizar">Atualizar agora</button><button class="btn" data-a="verExemplo">Ver com dados de exemplo</button></div>' : '')) + '</div>' + copia;
 };
 
