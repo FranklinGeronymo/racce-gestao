@@ -229,6 +229,15 @@ create table public.auditoria (
   detalhes  jsonb not null default '{}'::jsonb
 );
 
+-- Tentativas erradas de confirmar a senha atual (usada pela função de troca de
+-- senha para limitar tentativas por usuário). Só a chave de serviço acessa.
+create table public.tentativas_senha (
+  id       bigint generated always as identity primary key,
+  user_id  uuid not null,
+  em       timestamptz not null default now()
+);
+create index tentativas_senha_user on public.tentativas_senha (user_id, em);
+
 -- -----------------------------------------------------------------------------
 -- Funções auxiliares (esquema app)
 -- -----------------------------------------------------------------------------
@@ -498,6 +507,7 @@ alter table public.venda_custos     enable row level security;
 alter table public.historico_vendas enable row level security;
 alter table public.despesas         enable row level security;
 alter table public.auditoria        enable row level security;
+alter table public.tentativas_senha enable row level security;  -- sem política: só a chave de serviço
 
 -- Ninguém de fora lê nada; os usuários logados só leem (as gravações são feitas pelas funções abaixo).
 revoke all on all tables in schema public from anon, authenticated;
